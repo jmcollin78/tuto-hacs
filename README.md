@@ -1,5 +1,5 @@
 
-> Cette série de tuto a pour objectif de vous apprendre à développer une intégration Home Assistant acccessible sur HACS. Elle se veut progressive et didactique.
+## Cette série de tuto a pour objectif de vous apprendre à développer une intégration Home Assistant acccessible sur HACS. Elle se veut progressive et didactique.
 
 ---
 > Tu veux développer une intégration pour Home Assistant ou tout simplement contribuer à une intégration existante ? Cette suite d'article est faite pour toi et à pour but de t'aider à te lancer. Elle est conçu comme les articles que j'aurai aimé trouver lorsque je me suis moi-même lancé.''''

@@ -1,4 +1,5 @@
-> L'objectif de cet article est d'installer un environnement de dev pour développer une intégration HACS. Il s'inscrit dans la suite des articles dont le sommaire est [ici](/tuto-sommaire.md)
+## L'objectif de cet article est d'installer un environnement de dev pour développer une intégration HACS.
+Il s'inscrit dans la suite des articles dont le sommaire est [ici](/README.md)
 
 - [Les outils à installer](#les-outils-à-installer)
 - [Configuration de VSC](#configuration-de-vsc)
