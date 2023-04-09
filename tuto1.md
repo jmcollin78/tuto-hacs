@@ -19,6 +19,7 @@ Il s'inscrit dans la suite des articles dont le sommaire est [ici](/README.md)
   - [Installer le package Home Assistant](#installer-le-package-home-assistant)
   - [Démarrer Home Assistant](#démarrer-home-assistant)
   - [Stopper Home Assistant](#stopper-home-assistant)
+  - [Configurer l'installation automatique au démarrage](#configurer-linstallation-automatique-au-démarrage)
   - [Ajouter des tâches Dev-Container](#ajouter-des-tâches-dev-container)
 - [Conclusion](#conclusion)
 
@@ -371,6 +372,13 @@ On peut voir aussi que le répertoire ``config`` a été initialisé avec du con
 Pour stopper Home Assistant, comme il a été démarré en mode Terminal, il faut aller dans le Terminal en question et taper Ctrl+C.
 
 On va apprendre juste en dessous, une méthode un peu plus pratique.
+
+## Configurer l'installation automatique au démarrage
+A chaque démarrage de VSC, le container est reconstruit. Donc toutes les installations qu'on a pu faire à la main `pip install ...` sont perdues. Pour pallier à ça, on va ajouter la commande d'installation dans notre `devcontainer.json` :
+
+`"postCreateCommand": "pip install -r requirements.txt"`
+
+Un arrêt / relance complet de VSC te permettra de vérifier que l'installation de Home Assistant résiste maintenant à un arrêt/relance.
 
 ## Ajouter des tâches Dev-Container
 Arrêter et démarrer Home Assistant en mode ligne de commande dans le Terminal n'est pas très pratique. On va maintenant configurer des tâches Dev-Containers pour faire ça.
