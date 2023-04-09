@@ -174,7 +174,7 @@ On va ajouter les extensions vscode suivantes :
 - `github.vscode-pull-request-github` :  si on veut faire des pull request dans Github (pas nécessaire pour le tuto mais ca évitera d'y revenir ensuite),
 - `ryanluker.vscode-coverage-gutters` : pour mesurer ce qu'on appelle la couverture du code "code coverage" par les tests. On cherche à trouver les parties de notre code qui ne sont pas testées afin d'améliorer nos tests et d'être sur qu'on n'en a pas oublié. On s'en servira dans le chapitre sur les tests,
 
-Pour ajouter ces extensions, on ajoute simplement le bloc suivant dans le fichier ``devcontainer.json`` :
+Pour ajouter ces extensions, on ajoute simplement le bloc suivant dans le fichier ``devcontainer.json`` sous `customisations/vscode`:
 ```
 "extensions": [
     "ms-python.python",
@@ -201,7 +201,7 @@ Les options suivantes permettent de personnaliser l'environement Dev Containers.
 
 La plupart des **options sont nécessaires pour pouvoir prétendre pousser du code à l'équipe Core Home Assistant** qui ne le regardera même pas si le code n'est pas propre. Donc le mieux, c'est de les utiliser tout de suite et de s'y habituer. A l'usage, les valeurs par défaut proposées sont agréables et utiles.
 
-Pour les ajouter, il faut ajouter le bloc suivant dans le fichier ``devcontainer.json``:
+Pour les ajouter, il faut ajouter le bloc suivant dans le fichier ``devcontainer.json`` sous `customizations/vscode`:
 
 ```
 "settings": {
@@ -251,32 +251,35 @@ A ce stade tu devrais avoir un fichier ``devcontainer.json`` qui ressemble à ç
 		"9123:8123"
 	],
 
-	"extensions": [
-		"ms-python.python",
-		"github.vscode-pull-request-github",
-		"ryanluker.vscode-coverage-gutters",
-		"ms-python.vscode-pylance"
-	],
-
-	"settings": {
-		"files.eol": "\n",
-		"editor.tabSize": 4,
-		"terminal.integrated.profiles.linux": {
-			"Bash Profile": {
-				"path": "bash",
-				"args": []
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"github.vscode-pull-request-github",
+				"ryanluker.vscode-coverage-gutters",
+				"ms-python.vscode-pylance"
+			],
+			"settings": {
+				"files.eol": "\n",
+				"editor.tabSize": 4,
+				"terminal.integrated.profiles.linux": {
+					"Bash Profile": {
+						"path": "bash",
+						"args": []
+					}
+				},
+				"terminal.integrated.defaultProfile.linux": "Bash Profile",
+				"python.pythonPath": "/usr/bin/python3",
+				"python.analysis.autoSearchPaths": true,
+				"python.linting.pylintEnabled": true,
+				"python.linting.enabled": true,
+				"python.formatting.provider": "black",
+				"editor.formatOnPaste": false,
+				"editor.formatOnSave": true,
+				"editor.formatOnType": true,
+				"files.trimTrailingWhitespace": true
 			}
-		},
-		"terminal.integrated.defaultProfile.linux": "Bash Profile",
-		"python.pythonPath": "/usr/bin/python3",
-		"python.analysis.autoSearchPaths": true,
-		"python.linting.pylintEnabled": true,
-		"python.linting.enabled": true,
-		"python.formatting.provider": "black",
-		"editor.formatOnPaste": false,
-		"editor.formatOnSave": true,
-		"editor.formatOnType": true,
-		"files.trimTrailingWhitespace": true
+		}
 	}
 }
 ````
