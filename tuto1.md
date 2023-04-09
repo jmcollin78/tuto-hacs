@@ -203,7 +203,7 @@ La plupart des **options sont nécessaires pour pouvoir prétendre pousser du co
 
 Pour les ajouter, il faut ajouter le bloc suivant dans le fichier ``devcontainer.json`` sous `customizations/vscode`:
 
-```
+```json
 "settings": {
     "files.eol": "\n",
     "editor.tabSize": 4,
@@ -242,7 +242,7 @@ Ca se fait en ajoutant la ligne suivante dans le fichier ``devcontainer.json`` :
 
 ### Le fichier devcontainer.json complet
 A ce stade tu devrais avoir un fichier ``devcontainer.json`` qui ressemble à ça (sans les commentaires) :
-```
+```json
 {
 	"name": "Tuto dev hacs",
 	"image": "mcr.microsoft.com/devcontainers/python:0-3.11",
@@ -389,7 +389,7 @@ Ca se passe en ouvrant le menu des taches "Command+Shitf+P" (Mac). Ca ouvre un m
 Choisis "Executer la tâche", puis "Configurer une tâches", puis "Créer le fichier tasks.json à partir d'un modèle", puis ![Tâches others](/images/task-others.png?raw=true?raw=true).
 
 Ca vous ouvre un fichier ``tasks.json`` dans le répertoire ``.vscode`` à la racine de ton projet. Mets les lignes suivantes :
-```
+```json
 {
     "version": "2.0.0",
     "tasks": [
