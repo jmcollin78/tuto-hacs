@@ -420,14 +420,14 @@ Il faut indiquer à Home Assistant de s'éxécuter en mode debug. Pour cela, on 
 ```yaml
 debugpy:
   start: true
-  wait: true
+  wait: false
   port: 5678
 ```
 
 Avec cette configuration, on indique :
 1. qu'on veut activer le debugger Python (`debugpy`),
 2. qu'on veut le démarrer tout de suite (`start: true`),
-3. que Home Assistant doit se mettre en attente de la connexion du debugger au démarrage (`wait: true`). Mets le à `false` si tu ne veux pas attendre au démarrage. Comme c'est le debugger qui lance Home Assistant cette valeur peut rester sur `true` sans soucis,
+3. que Home Assistant doit se mettre en attente de la connexion du debugger au démarrage (`wait: true`). Mets le à `false` si tu ne veux pas attendre au démarrage. Comme c'est le debugger qui lance Home Assistant cette valeur peut rester sur `false` sans soucis,
 4. et que le port du debugger est le port 5678.
 
 ### Ajouter une configuration de lancement dans VSC
@@ -735,6 +735,6 @@ sensor:
 # If you need to debug uncommment the line below (doc: https://www.home-assistant.io/integrations/debugpy/)
 debugpy:
   start: true
-  wait: true
+  wait: false
   port: 5678
 ```
