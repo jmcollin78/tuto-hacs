@@ -28,7 +28,7 @@ __Un peu de lecture :__ la doc officielle est [ici](#https://developers.home-ass
 Sommaire
 1. _[tuto1](/tuto1.md) :_ installer son environnement de dev,
 2. _[tuto2](/tuto2.md) :_ créer une intégration et une entité simple,
-3. _tuto3 :_ interactions avec d'autres entités (évènements, états, ...),
+3. _[tuto3](/tuto3.md) :_ interactions avec d'autres entités (évènements, états, ...),
 4. _tuto4 :_ pages de configuration (configFlow, traductions)
 5. _tuto5 :_ aspects avancés (tests unitaires, debugging, travailler avec les sources Home Assistant)
 
