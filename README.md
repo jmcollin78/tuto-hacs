@@ -2,7 +2,7 @@
 ## Cette série de tuto a pour objectif de vous apprendre à développer une intégration Home Assistant acccessible sur HACS. Elle se veut progressive et didactique.
 
 ---
-> Tu veux développer une intégration pour Home Assistant ou tout simplement contribuer à une intégration existante ? Cette suite d'article est faite pour toi et à pour but de t'aider à te lancer. Elle est conçu comme les articles que j'aurai aimé trouver lorsque je me suis moi-même lancé.''''
+> Tu veux développer une intégration pour Home Assistant ou tout simplement contribuer à une intégration existante ? Cette suite d'article est faite pour toi et à pour but de t'aider à te lancer. Elle est conçu comme les articles que j'aurai aimé trouver lorsque je me suis moi-même lancé.
 
 # Les pré-requis
 
@@ -27,7 +27,7 @@ __Un peu de lecture :__ la doc officielle est [ici](#https://developers.home-ass
 
 Sommaire
 1. _[tuto1](/tuto1.md) :_ installer son environnement de dev,
-2. _tuto2 :_  et créer une intégration, d'appareil et de plusieurs entités,
+2. _[tuto2](/tuto2.md) :_ créer une intégration et une entité simple,
 3. _tuto3 :_ interactions avec d'autres entités (évènements, états, ...),
 4. _tuto4 :_ pages de configuration (configFlow, traductions)
 5. _tuto5 :_ aspects avancés (tests unitaires, debugging, travailler avec les sources Home Assistant)
