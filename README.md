@@ -22,7 +22,8 @@ __HACS :__ `Home Assistant Community Store` est tout simplement indispensable. I
 __Un peu de lecture :__ la doc officielle est [ici](#https://developers.home-assistant.io/docs/development_index). Elle est en Anglais, pas super à jour tout le temps, n'est pas faite pour développer une intégration HACS et n'est pas très didactique. Si tu n'y connais rien, tu n'y comprendra pas grand-chose. Par contre, s'y référer de temps en temps pour étendre le champ de sa connaissance une fois qu'on a compris les concepts est une super bonne idée. Gardes bien ça en tête !
 
 
-> ![Tip](/images/tips.png?raw=true?raw=true) Tu es prêt ? Fébrile ? Ca va aller, on te dit...
+> ![Tip](/images/tips.png?raw=true)
+> Tu es prêt ? Fébrile ? Ca va aller, on te dit...
 
 
 Sommaire
