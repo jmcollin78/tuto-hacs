@@ -7,7 +7,7 @@
 # Les pré-requis
 
 Pour pouvoir utiliser ces articles il est préférable de :
-1. Connaitre Home Assistant un minimum et notamment les concepts de : Appareils, Entités, Intégration. Bien qu'on va devoir définir ces termes il est quand même souhaitable de connaitre ces concepts un minimum,
+1. Connaitre Home Assistant un minimum et notamment les concepts de : Appareils, Entités, Intégration. Bien qu'on va devoir définir ces termes il est quand même souhaitable de connaitre ces concepts un minimum. Je vous conseille la lecture de l'excellent article [Architecture et concepts Home Assistant](https://hacf.fr/blog/ha-concepts-architecture/) au besoin,
 2. Connaitre le langage de développement Python. Cette suite d'article n'est pas un cours de Python et suppose que vous connaissez un minimum ce langage. Sinon il existe d'excellent tutos Python en ligne et il est préférable de les suivre avant d'attaquer ces articles,
 3. Le métier du developpement. Le développement est un métier, à son vocabulaire et ses règles. Des notions sont nécessaires pour comprendre ces articles, même si le niveau n'est pas très élevé. Soyez à l'aise avec les notions de sources, gestionnaire de sources (Github, git), repository, classes, méthodes, tests unitaires, attributs ou faites un tuto en ligne avant d'aborder ces articles. 
 4. Un compte Github : un compte Github est nécessaire pour pouvoir forker des repos et notamment celui de Home Assistant
