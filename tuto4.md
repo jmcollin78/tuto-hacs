@@ -10,7 +10,7 @@ Ca se fait en ajoutant le code suivant dans notre classe d'entité :
 from homeassistant.helpers.entity import DeviceInfo, DeviceEntryType
 
 ...
-class TutoHacsElapsedSecondEnity(SensorEntity):
+class TutoHacsElapsedSecondEntity(SensorEntity):
     ...
     @property
     def device_info(self) -> DeviceInfo:

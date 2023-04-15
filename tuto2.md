@@ -1,4 +1,4 @@
-## L'objectif de cet article est de créer une première intégration et une prmière entité simple
+## L'objectif de cet article est de créer une première intégration et une première entité simple
 Il s'inscrit dans la suite des articles dont le sommaire est [ici](/README.md).
 
 > ![Tip](/images/tips.png?raw=true) Les fichiers sources complets sont en fin d'article. Cf [Fichiers sources du tuto](#fichiers-sources-du-tuto)
@@ -584,7 +584,7 @@ DEVICE_MANUFACTURER = "JMCOLLIN"
 ## `sensor.py`
 
 ```python
-""" Implements the VersatileThermostat sensors component """
+""" Implements the Tuto HACS sensors component """
 import logging
 
 from homeassistant.const import UnitOfTime
