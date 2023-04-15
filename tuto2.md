@@ -173,7 +173,7 @@ Tu devrais voir le log suivant :
 2023-04-09 08:10:22.372 WARNING (SyncWorker_0) [homeassistant.loader] We found a custom integration tuto_hacs which has not been tested by Home Assistant. This component might cause stability problems, be sure to disable it if you experience issues with Home Assistant
 ```
 
-> ![Tip](/images/tips.png?raw=true?raw=true) Ca montre que notre intégration est bien reconnue par Home Assistant.
+> ![Tip](/images/tips.png?raw=true) Ca montre que notre intégration est bien reconnue par Home Assistant.
 > 
 > Par contre, on ne voit pas notre log qui correspond à la ligne `_LOGGER.info("Initializing %s integration with plaforms: %s", DOMAIN, PLATFORMS)` ce qui indique que notre intégration n'est pas utilisée. On va y remedier un peu en-dessous.
 
