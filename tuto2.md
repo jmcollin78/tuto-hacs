@@ -288,11 +288,11 @@ async def async_setup_platform(
 
     _LOGGER.debug("Calling async_setup_entry entry=%s", entry)
 
-    entity = TutoHacsElapsedSecondEnity(hass, entry)
+    entity = TutoHacsElapsedSecondEntity(hass, entry)
     async_add_entities([entity], True)
 
 
-class TutoHacsElapsedSecondEnity(SensorEntity):
+class TutoHacsElapsedSecondEntity(SensorEntity):
     """La classe de l'entité TutoHacs"""
 
     def __init__(
@@ -308,9 +308,9 @@ class TutoHacsElapsedSecondEnity(SensorEntity):
 ```
 La fonction `async_setup_platform` est appelée par Home Assistant lorsqu'une entité est de type `sensor`, pour notre domaine est configurée (dans `configuration.yaml`). Elle prend en argument, l'objet `hass` (qu'on verra plus en détail dans le prochain tuto), la configuration trouvée dans le `configuration.yaml` et une fonction `async_add_entities` qui doit être appelée pour ajouter les entités.
 
-Elle instancie notre entité à partir de sa classe qui le représente (`TutoHacsElapsedSecondEnity`) et appelle `async_add_entities` avec un tableau des classes d'entités créées.
+Elle instancie notre entité à partir de sa classe qui le représente (`TutoHacsElapsedSecondEntity`) et appelle `async_add_entities` avec un tableau des classes d'entités créées.
 
-Ce fichier contient aussi la déclaration de la classe `TutoHacsElapsedSecondEnity`, ne faisant pas grand chose mais qui représente notre entité. Elle dérive de `SensorEntity` qui est la classe de base de toutes les entités de type Sensor.
+Ce fichier contient aussi la déclaration de la classe `TutoHacsElapsedSecondEntity`, ne faisant pas grand chose mais qui représente notre entité. Elle dérive de `SensorEntity` qui est la classe de base de toutes les entités de type Sensor.
 
 Pour l'instant cette classe, ne fait rien d'autre qu'initialiser les 2 attributs `_attr_name` et `_att_unique_id` qui sont nécessaire à la création de l'entité. Comme a donné un nom à notre entité, on l'indique à HA (sinon il lui affecte un nom par défaut) avec la ligne: `self._attr_has_entity_name = True`.
 
@@ -355,7 +355,7 @@ from homeassistant.components.sensor import (
 )
 
 ...
-class TutoHacsElapsedSecondEnity(SensorEntity):
+class TutoHacsElapsedSecondEntity(SensorEntity):
 ...
 
     @property
@@ -615,11 +615,11 @@ async def async_setup_platform(
 
     _LOGGER.debug("Calling async_setup_entry entry=%s", entry)
 
-    entity = TutoHacsElapsedSecondEnity(hass, entry)
+    entity = TutoHacsElapsedSecondEntity(hass, entry)
     async_add_entities([entity], True)
 
 
-class TutoHacsElapsedSecondEnity(SensorEntity):
+class TutoHacsElapsedSecondEntity(SensorEntity):
     """La classe de l'entité TutoHacs"""
 
     def __init__(
