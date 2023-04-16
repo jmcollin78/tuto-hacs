@@ -7,6 +7,36 @@ Il s'inscrit dans la suite des articles dont le sommaire est [ici](/README.md).
 # Pre-requis
 Avoir déroulé avec succès les deux premiers articles [tuto1](/tuto1.md) et [tuto2](/tuto2.md). Vous devez donc avoir une entité avec un état qui est une mesure en secondes.
 
+# Sommaire
+
+- [Pre-requis](#pre-requis)
+- [Sommaire](#sommaire)
+- [Les points abordés](#les-points-abordés)
+- [L'objet `hass`](#lobjet-hass)
+- [Déclencher périodiquement la mise à jour d'une entité](#déclencher-périodiquement-la-mise-à-jour-dune-entité)
+- [Mettre à jour l'état de l'entité](#mettre-à-jour-létat-de-lentité)
+- [Publier et recevoir des évènements](#publier-et-recevoir-des-évènements)
+  - [Publication d'un évènement](#publication-dun-évènement)
+  - [Réception des évènements](#réception-des-évènements)
+    - [Ajouter une classe pour notre 2ème sensor](#ajouter-une-classe-pour-notre-2ème-sensor)
+    - [Instancier cette classe au démarrage de la plate-forme](#instancier-cette-classe-au-démarrage-de-la-plate-forme)
+    - [Interpréter les évènements reçus](#interpréter-les-évènements-reçus)
+    - [Démarrage de Home Assistant](#démarrage-de-home-assistant)
+- [Implémenter un service](#implémenter-un-service)
+  - [Déclaration du service](#déclaration-du-service)
+  - [Enregistrement du service au setup](#enregistrement-du-service-au-setup)
+    - [Voluptuous](#voluptuous)
+  - [Redémarrage de Home Assistant](#redémarrage-de-home-assistant)
+  - [Implémentation du service](#implémentation-du-service)
+- [Intégrer notre entité dans l'écosystème Home Assistant](#intégrer-notre-entité-dans-lécosystème-home-assistant)
+- [Conclusion](#conclusion)
+- [Listes des fichiers références de ce tuto](#listes-des-fichiers-références-de-ce-tuto)
+  - [`const.py`](#constpy)
+  - [`sensor.py`](#sensorpy)
+  - [`services.yaml`](#servicesyaml)
+  - [`automations.yaml`](#automationsyaml)
+
+
 # Les points abordés
 Dans cet article, tu vas apprendre à :
 1. utiliser l'objet `hass`,
@@ -41,13 +71,21 @@ class TutoHacsElapsedSecondEntity(SensorEntity):
         ...
         self._hass = hass
 ```
-Plus d'informations sur cet objet [ici](https://developers.home-assistant.io/docs/dev_101_hass/).
+
+On peut utiliser cet objet pour :
+1. **lire des informations** : liste des domaines, des intégrations, accès à l'entity registry ou à la device registry, accès à la configuration de Home Assistant (timezone, unité de mesure, ...),
+2. **écrire des information**. Il est fréquent de voir des intégrations qui sauvegarde leurs informations dans cet objet. Par exemple, l'intégration LocalTuya stocke tous ses devices dans `hass.data[DOMAIN][TUYA_DEVICES]`. Ca lui permet d'accéder à ses devices partout (puisque l'objet `hass` est partout). On ne va pas le faire dans ce tuto mais saches que cela existe et que c'est fréquemment utilisé.
+
+On verra dans le tuto5 [tuto5](/tuto5.md), une utilisation avancée de cet objet pour rechercher toutes des entités, même celles qui ne nous appartiennent pas.
+
+Plus d'informations sur cet objet voir [ici](https://developers.home-assistant.io/docs/dev_101_hass/).
+
 
 # Déclencher périodiquement la mise à jour d'une entité
 
 Pour ce faire, il faut faire générer par Home Assistant un évènement basé sur le temps et capter cet évènement. Lors de la captation de cet évènement, on incrémentera le compteur en secondes de l'entité.
 
-Dans notre sensor, on a besoin d'une fonction spéciale qui est appelée par Home Assistant lorsque l'entité a été prise en compte. C'est la méthode `async_added_to_hass`qui est définie dans la classe de base de toutes les entités et qu'on va surcharger pour ajouter notre comportement souhaité. On marque cette méthode avec l'annotation @callback pour signifier qu'on surcharge une méthode de la classe de base. Même si ce n'est pas indispensable, ca donne des indications au lecteur.
+Dans notre sensor, on a besoin d'une fonction spéciale qui est appelée par Home Assistant lorsque l'entité a été prise en compte. C'est la méthode `async_added_to_hass`qui est définie dans la classe de base de toutes les entités et qu'on va surcharger pour ajouter notre comportement souhaité. On marque cette méthode avec l'annotation `@callback` pour signifier qu'on surcharge une méthode de la classe de base. Même si ce n'est pas indispensable, ca donne des indications au lecteur.
 
 ```python
 from datetime import timedelta
@@ -63,7 +101,7 @@ class TutoHacsElapsedSecondEntity(SensorEntity):
         # Arme le timer
         timer_cancel = async_track_time_interval(
             self._hass,
-            self.methode_a_appeler,
+            self.incremente_secondes,   # la méthode qui sera appelée toutes les secondes
             interval=timedelta(seconds=1),
         )
         # desarme le timer lors de la destruction de l'entité
@@ -71,11 +109,11 @@ class TutoHacsElapsedSecondEntity(SensorEntity):
         
 ```
 
-Le fonction de la méthode `async_added_to_hass` est le suivant :
+Le fonctionnement de la méthode `async_added_to_hass` est le suivant :
 1. on appelle la fonction helper `async_track_time_interval` qui programme un timer périodique d'interval égal 1 seconde dans l'exemple,
 2. on donne à ce helper l'objet `hass`, la méthode de notre entité qui sera appelée à chaque échéance du timer et l'interval,
-3. cette fonction retourne une fonction qui doit être appelée pour stopper le timer,
-4. on passe cette fonction d'annulation à la méthode de la classe `Entity` nommée `async_on_remove` qui appelle toutes les méthodes qu'on lui aura donné lors de la destruction de l'entité. Si on ne le fait, le timer continuera de poster des évènements dans le vide.
+3. cet appel retourne une fonction qui doit être appelée pour stopper le timer,
+4. on passe cette fonction d'annulation à la méthode de la classe `Entity` nommée `async_on_remove` qui appelle toutes les méthodes qu'on lui aura donné lors de la destruction de l'entité. Si on ne le fait pas, le timer continuera de poster des évènements dans le vide.
 
 Il ne nous reste plus qu'à créer la méthode qu'on veut appeler toutes les secondes :
 
@@ -102,7 +140,8 @@ Si on regarde les logs, on voit bien que :
 
 Notre méthode `incremente_secondes` est bien appelée toutes les secondes.
 
-> ![Tip](/images/tips.png?raw=true) Le second argument nommé `_` indique qu'on ne veut pas tenir compte du 2nd argument. Normalement, l'évèvement est passé en 2nd argument mais comme on ne s'en sert pas ici, on remplace le deuxième argument par `_`.
+> ![Tip](/images/tips.png?raw=true)
+> Le second argument nommé `_` indique qu'on ne veut pas tenir compte du 2nd argument. Normalement, l'évèvement est passé en 2nd argument mais comme on ne s'en sert pas ici, on remplace le deuxième argument par `_`.
 
 # Mettre à jour l'état de l'entité
 
@@ -122,16 +161,14 @@ Cela se fait en appelant la méthode `async_write_ha_state` définie dans la cla
         self.async_write_ha_state()
 ```
 
-On en profite pour initialiser la valeur du compteur à 0 et non pas 12 dans la méthode `__init__`.
+On en profite pour initialiser la valeur du compteur à 0 et non pas 12 dans la méthode `__init__`, histoire de démarrer à zéro.
 
 On redémarre, on voit toujours les logs bouger toutes les secondes et si on regarde sur le web ([ici](http://localhost:9123/lovelace/0)), on voit bien notre compteur évoluer toutes les secondes :
 
 > ![Compteur](/images/compteur.png?raw=true)
 
 # Publier et recevoir des évènements
-Le coeur de Home Assistant est basé sur un bus d'évènements. Il est fondamentale de savoir s'y interfacer puisque c'est par là que va passer toutes communications entre les différents composants de Home Assistant.
-
-Pour ce tuto, on va créer une deuxième entité dans notre intégration qui écoute des évènements publiés par la première.
+Le coeur de Home Assistant est basé sur **un bus d'évènements** sur lequel on peut publier ou s'abonner. Il est fondamental de savoir s'y interfacer puisque c'est par là que va passer **toutes communications entre les différents composants** de Home Assistant.
 
 ## Publication d'un évènement
 
@@ -159,7 +196,7 @@ On va modifier notre méthode `incremente_secondes` de notre entité vedette pou
 
 Ca tient en une ligne : `self._hass.bus.fire` qui prend en argument, le type d'évènement et un json qui contient des infos sur l'évèement.
 
-On arrête et on relance Home Assistant. Si on contrôle dans le web / outils de développement / Evènements et qu'on s'abonne à l'évènement `event_changement_etat_TutoHacsElapsedSecondEntity`, on constate ça :
+On arrête et on relance Home Assistant. Si on contrôle dans le web ou dans "Outils de développement / Evènements" et qu'on s'abonne à l'évènement `event_changement_etat_TutoHacsElapsedSecondEntity`, on constate ça :
 
 > ![Evènements](/images/evenements.png?raw=true)
 
@@ -212,14 +249,14 @@ context:
 
 
 ## Réception des évènements
-On va créer une deuxième entité qui va écouter les évènements de la première et va stocker dans son état la date du dernier évènement reçu (ca sert à rien mais pourquoi pas après tout).
+On va créer **une deuxième entité qui va écouter les évènements de la première** et va stocker dans son état la date du dernier évènement reçu (ca sert à rien mais pourquoi pas après tout).
 
 > Si tu es motivé, tu peux le faire sous la forme d'un exercice. A part la réception d'un évènement, tout le reste à déjà été vu dans le [tuto2](/tuto2.md)
 
 Voici ce qu'il faut faire :
-1. ajouter une classe pour notre deuxième entité (dans `sensor.py`) et se mettre en écoute des évènements de la première entité,
-2. faire en sorte qu'elle soit instanciée au démarrage au setup de la plate-forme (dans `async_setup_platform` de `sensor.py`),
-3. interpréter les évènements reçus.
+1. **ajouter une classe** pour notre deuxième entité (dans `sensor.py`) et se mettre en écoute des évènements de la première entité,
+2. faire en sorte qu'**elle soit instanciée au setup de la plate-forme** (dans `async_setup_platform` de `sensor.py`),
+3. **interpréter les évènements** reçus.
 
 ### Ajouter une classe pour notre 2ème sensor
 
@@ -235,6 +272,7 @@ class TutoHacsListenEntity(SensorEntity):
     """La classe de l'entité TutoHacs qui écoute la première"""
 
     _hass: HomeAssistant
+    # On va stocker dans cet attribut l'instance de l'entité à écouter
     _entity_to_listen: TutoHacsElapsedSecondEntity
 
     def __init__(
@@ -268,17 +306,6 @@ class TutoHacsListenEntity(SensorEntity):
         """Cette entité"""
         return SensorDeviceClass.TIMESTAMP
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Donne le lien avec le device. Non utilisé jusqu'au tuto 4"""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._attr_name,
-            manufacturer=DEVICE_MANUFACTURER,
-            model=DOMAIN,
-        )
-
     @callback
     async def async_added_to_hass(self):
         """Ce callback est appelé lorsque l'entité est ajoutée à HA"""
@@ -294,10 +321,10 @@ class TutoHacsListenEntity(SensorEntity):
 ```
 
 Ca ressemble beaucoup à la classe créée dans le [tuto2](/tuto2.md), mais il y a quelques substilités :
-1. dans `__init__` il faut lui donner un name (resp. unique_id) qui sera unique. Pour cela, on concatène `Ecouteur` (resp. `_ecouteur`) au `name` (resp. `unique_id`)
+1. dans `__init__` il faut lui donner un `name` (resp. `unique_id`) qui sera unique. Pour cela, on concatène `Ecouteur` (resp. `_ecouteur`) au `name` (resp. `unique_id`)
 2. la device class est positionnée à `TIMESTAMP` et non pas `DURATION` car notre entité représente une date absolue et pas une durée,
 3. il n'y a pas de `state_class` ni de `native_unit_of_mesurement` puisque l'état de notre entité n'est pas une mesure à proprement parler,
-4. dans la méthode `async_added_to_hass` (qui est appelé par HA quand l'entité est ajoutée), on utilise le Helper `async_track_state_change_event` qui permet de se mettre en écoute des changements d'état dont l'entity_id est donné en 2nd paramètre (dans un tableau car on peut en écouter plusieurs). C'est ici que se passe le lien entre les 2 entités : celle qui émet des changements d'état et notre deuxième qui les écoute.
+4. dans la méthode `async_added_to_hass` (qui est appelé par HA quand l'entité est ajoutée), on utilise le Helper `async_track_state_change_event` qui permet de se mettre en écoute des changements d'état dont l'`entity_id` est donné en 2nd paramètre (dans un tableau car on peut en écouter plusieurs). C'est ici que se passe le lien entre les 2 entités : celle qui émet des changements d'état et notre deuxième qui les écoute.
 5. comme vu dans le [tuto2](/tuto2.md), lorsqu'on se met en écoute d'un évènement il faut se désabonner lorsque l'entité est supprimée, sinon on continue de recevoir les évents alors que l'entité a été supprimée de HA. Ca se fait avec l'appel à `async_on_remove` qui prend en paramètre le retour de `async_track_state_change_event`. La méthode appelée à chaque changement d'état reçu sera `_on_event` qu'on verra ci-dessous.
 
 ### Instancier cette classe au démarrage de la plate-forme
@@ -347,11 +374,11 @@ Cela va se faire dans la méthode `_on_event` qu'il faut ajouter à notre 2nd cl
 ```
 
 Ce code déroule les étapes suivantes :
-1. reçoit un `event` du type `Event` en argument. C'est une core class qu'il est important de connaitre. Un `Event` contient l'`entity_id` de l'émetteur, un champ `data` de type dictonnary qui contient 2 attributs : `new_state` et `old_state` avec respectivement le nouvel état et l'ancien état de l'entité,
-2. on commence par récupérer ses ancien et nouveau état : `new_state: State = event.data.get("new_state")`. J'ai mis en commentaire le code qui permet de récupérer l'ancien état (non utilisé ici)
-3. l'objet `new_state` est de type `State` qui est aussi une core class à connaitre. Elle contient : l'état dans le champ `state`, les `state_class`, `unit_of_mesurement`, `device_class` de cet état, et 2 timestamp `last_changed` (l'horodatage du changement d'état) et `last_updated` (l'horodatage de la dernière mise à jour). Ces 2 horodatages peuvent être différent dans le cas d'une entité avec polling. Dans ce cas, la date de remontée de l'état (date du poll) n'est pas forcément la date du changement d'état. Si on poll toutes les minutes, il peut y avoir jusqu'à une minute d'écard entre le changement d'état effectif et la date de sa remontée. Dans notre cas et dans la plupart des cas, on préfère utiliser la date du changement d'état effectif et donc `last_changed`
-4. on vérifie que l'état est bien positionné avec cette ligne : `if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN)`. Il faut qu'il y ait un `new_state` et que le `state` de ce `new_state` ne soit pas 'Unavailable" ni "Unknown". Si c'est le cas, on arrête ici et on ne met pas à jour notre état,
-5. si il y a bien un état valide, on met à jour notre propre état avec l'horodate du dernier changement : `self._attr_native_value = new_state.last_changed`
+1. reçoit un `event` du type `Event` en argument. **`Event` une core classe** qu'il est important de connaitre. Un `Event` contient l'`entity_id` de l'émetteur, un champ `data` de type dictonnary qui contient 2 attributs : `new_state` et `old_state` avec respectivement le nouvel état et l'ancien état de l'entité,
+2. on commence par **récupérer ses ancien et nouveau état** : `new_state: State = event.data.get("new_state")`. J'ai mis en commentaire le code qui permet de récupérer l'ancien état (non utilisé ici)
+3. l'objet `new_state` est de type **`State` qui est aussi une core classe** à connaitre. Elle contient : l'état dans le champ `state`, les `state_class`, `unit_of_mesurement`, `device_class` de cet état, et 2 timestamp `last_changed` (l'horodatage du changement d'état) et `last_updated` (l'horodatage de la dernière mise à jour). Ces 2 horodatages peuvent être différent dans le cas d'une entité avec polling. Dans ce cas, la date de remontée de l'état (date du poll) n'est pas forcément la date du changement d'état. Si on poll toutes les minutes, il peut y avoir jusqu'à une minute d'écard entre le changement d'état effectif et la date de sa remontée. Dans notre cas et dans la plupart des cas, on préfère utiliser la date du changement d'état effectif et donc `last_changed`
+4. on vérifie que **l'état est bien positionné** avec cette ligne : `if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN)`. Il faut qu'il y ait un `new_state` et que le `state` de ce `new_state` ne soit pas 'Unavailable" ni "Unknown". Si c'est le cas, on arrête ici et on ne met pas à jour notre état,
+5. si il y a bien un état valide, **on met à jour notre propre état** avec l'horodate du dernier changement : `self._attr_native_value = new_state.last_changed`
 6. on sauvegarde notre nouvel état avec `self.async_write_ha_state()`
 
 Il faudra ajouter les quelques imports suivants pour que cela fonctionne (en début de fichier) :
@@ -372,7 +399,7 @@ from homeassistant.core import HomeAssistant, callback, Event, State
 >
 ![autocompletion](/images/autocompletion.png?raw=true)
 >
-> Bref, je le conseille vivement, ça simplifie beaucoup la phase de développement.
+> Bref, je le conseille vivement, ça simplifie beaucoup la phase de développement et facilite la relecture du code.
 
 
 ### Démarrage de Home Assistant
@@ -398,14 +425,14 @@ Le dashboard aperçu (ici) affiche aussi nos 2 entités :
 Un service est un point d'accès à notre intégration appelable depuis l'extérieur (une autre intégration, une automatisation, ...).
 
 Créer un service se fait très simplement avec les étapes suivantes :
-1. déclaration de notre service dans un fichier de description `services.yaml`,
-2. enregistrement du service au setup de la plate-forme,
-3. implémentation du service à proprement parler.
+1. **déclaration de notre service** dans un fichier de description `services.yaml`,
+2. **enregistrement du service** au setup de la plate-forme,
+3. **implémentation du service** à proprement parler.
 
 On va implémenter un service qui permet de remettre à zéro notre compteur pour l'exemple.
 
 ## Déclaration du service
-Home Assistant découvre les services exposés par les intégrations grace au fichier `services.yaml`. Pour notre exemple, il va ressembler à ça :
+Home Assistant découvre les services exposés par les intégrations grace au fichier `services.yaml` présent à la racine de l'intégration. Pour notre exemple, il va ressembler à ça :
 ```yaml
 raz_compteur:
   name: Raz compteur
@@ -432,17 +459,17 @@ raz_compteur:
 Ce fichier contient :
 1. la description d'un service nommé `raz_compteur`, avec un nom et une description pour les utilisateurs à travers "Outil de developpement / Service",
 2. la cible `target`. On indique ici que toutes les entités de l'intégration `tuto_hacs` peuvent être ciblées,
-3. une description des paramètres dans la structure `fields`:
+3. une description des paramètres du service dans la structure `fields`. On a un seul paramètre :
    1. le nom du paramètre: `valeur_depart` avec un nom pour l'utilisateur et une description,
    2. le caractère obligatoire ou pas du paramètre (ici il est facultatif),
-   3. est-ce qu'il apparait seulement en mode 'Avancé'. Ici non puisqu'on veut le voir tout le temps,
+   3. est-ce qu'il apparait seulement en mode 'Avancé' ?. Ici non puisqu'on veut le voir tout le temps,
    4. un exemple de valeur,
    5. la valeur par défaut,
    6. et un `selector` qui permet à l'utilisateur de choisir la valeur qu'il veut. Ici, on utilise un sélector de type `number` avec une valeur minimale de 0, une valeur maximale de 900, un pas de 1 et l'utilisateur pourra choisir la valeur sur un slider. On verra le rendu un peu en-dessous.
 
-Home Assistant propose un nombre de sélecteurs très impressionant et vraiment très bien foutu. Tu trouveras la liste [ici](https://www.home-assistant.io/docs/blueprint/selectors/).
+Home Assistant propose un nombre de sélecteurs très impressionnant et vraiment très bien foutu. Tu trouveras la liste [ici](https://www.home-assistant.io/docs/blueprint/selectors/).
 
-## enregistrement du service au setup
+## Enregistrement du service au setup
 Lors du setup de notre intégration, on doit enregistrer notre service et dire quelle méthode doit être appelée lorsque le service est invoqué. Ca se fait dans la fonction `async_setup_platform` à l'aide du code suivant :
 ```python
 async def async_setup_platform(
@@ -462,11 +489,11 @@ async def async_setup_platform(
     )
 ```
 
-1. on récupère notre plate-forme courante avec : `async_get_current_platform()`,
-2. on enregistre notre service avec l'appel à : `platform.async_register_entity_service`. Cet appel prend 3 paramètres :
-  - le nom du service que l'on a mis dans la constante `SERVICE_RAZ_COMPTEUR` définie dans notre `const.py`. Elle doit être égale au nom du service dans le `services.yaml` à savoir : `raz_compteur` dans l'exemple,
-  - une structure `Voluptuous` qui en charge de vérifier les paramètres donnés lors de l'appel du service. Voir ci-dessous,
-  - le nom de la méthode sur notre classe d'entité qui sera appelée lorsque le service est invoqué. Ici, on appellera la méthode : `TutoHacsElapsedSecondEntity.service_raz_compteur`.
+1. **on récupère notre plate-forme courante** avec : `async_get_current_platform()`,
+2. **on enregistre notre service** avec l'appel à : `platform.async_register_entity_service`. Cet appel prend 3 paramètres :
+  - **le nom du service** que l'on a mis dans la constante `SERVICE_RAZ_COMPTEUR` définie dans notre `const.py`. Elle doit être égale au nom du service dans le `services.yaml` à savoir : `raz_compteur` dans l'exemple,
+  - **une structure `Voluptuous`** qui en charge de vérifier les paramètres donnés lors de l'appel du service. Voir ci-dessous,
+  - **le nom de la méthode** sur notre classe d'entité qui sera appelée lorsque le service est invoqué. Ici, on appellera la méthode : `TutoHacsElapsedSecondEntity.service_raz_compteur`.
 
 On va avoir besoin des imports suivants :
 
@@ -496,11 +523,13 @@ Cette partie est complexe et sera abordée beaucoup plus en détail avec le [tut
 
 C'est une des parties les moins bien documentée à la fois dans Home Assistant mais aussi dans le package `voluptuous` lui-même donc je ne rentre pas plus dans le détail dans ce tuto.
 
-## Redémarrage de Home Assistant
-Tu commences à en avoir l'habitude maintenant mais je le répette pour la dernière fois.
-On vérifie qu'on n'a pas d'erreur dans l'onglet "PROBLEMES" de VSC et on (re)démarre avec 'Command + Shift + P'.
+Pour les curieux, la seule doc à peu près potable est [ici](https://github.com/alecthomas/voluptuous).
 
-On ne doit pas voir d'erreur les logs, seulement notre compteur qui tourne toutes les secondes.
+## Redémarrage de Home Assistant
+Tu commences à en avoir l'habitude maintenant mais je le répette encore :
+- on vérifie qu'on n'a pas d'erreur dans l'onglet "PROBLEMES" de VSC,
+- on (re)démarre avec 'Command + Shift + P',
+- on ne doit pas voir d'erreur les logs, seulement notre compteur qui tourne toutes les secondes.
 
 Vas ensuite dans les "Outils de développement / Services" ([ici](http://localhost:9123/developer-tools/service)) et tape 'tuto' dans la boite de recherche des services. Tu dois voir notre service :
 ![Service raz_compteur](/images/service-raz-compteur.png?raw=true)
@@ -509,15 +538,17 @@ Sélectionne le et tu vas voir apparaitre l'interface qui permet de configurer l
 ![Service raz_compteur](/images/service-raz-compteur-config.png?raw=true)
 
 Tu peux :
-1. sélectionner des entités et tu constates qu'il n'y a bien que les entités de notre intégration qui sont présentées,
-2. modifier la "Valeur départ" avec un slider ou directement en tapant la valeur,
-3. ne pas passer de valeur de départ en la décochant. C'est dû au caractère facultatif de notre paramètre "valeur_depart".
+1. **sélectionner des entités** et tu constates qu'il n'y a bien que les entités de notre intégration qui sont présentées,
+2. **modifier la "Valeur départ"** avec un slider ou directement en tapant la valeur,
+3. **ne pas passer de valeur de départ** en la décochant. C'est dû au caractère facultatif de notre paramètre "valeur_depart".
 
 L'appel du service provoque une erreur de type :
 ```log
 AttributeError: 'TutoHacsElapsedSecondEntity' object has no attribute 'service_raz_compteur'
 ```
 puisque en effet notre classe `TutoHacsElapsedSecondEntity` n'a pas encore de méthode `service_raz_compteur`. On va y remedier de suite.
+
+On voit que la structure est en place, le service est bien déclaré et pris en compte par Home Assistant.
 
 ## Implémentation du service
 Pour cela, c'est très simple, il suffit d'ajouter une méthode `service_raz_compteur` à notre classe `TutoHacsElapsedSecondEntity` :
@@ -547,19 +578,19 @@ Redémarres Home Assistant et vérifies que cet fois l'appel du service se passe
 Si tu regardes le nouvel état de ton entité ([ici](http://localhost:9123/developer-tools/state) ou [ici](http://localhost:9123/lovelace/0)), tu dois constater le redémarrage du compteur à la valeur spécifiée.
 
 > ![Tip](/images/tips.png?raw=true)
-> - si tu appelles le service sur la deuxième entité, tu vas avoir une erreur car nous n'avons définit le service sur la classe de cette entité. Pour éviter ça :
+> Si tu appelles le service sur la deuxième entité, tu vas avoir une erreur car nous n'avons définit le service sur la classe de cette entité. Pour éviter ça :
 > 1. on peut implémenter le service dans la classe `TutoHacsListenEntity` mais ça fait un appel qui ne sert à rien,
-> 2. ou limiter dans les entités `target`. On peut utiliser le paramètre `device_class` du selector à `duration` puisque seule la première classe à cette `device_class`. On a alors une configuration `target` qui ressemble à ça :
+> 2. ou limiter les entités ciblées dans le `target` de notre `services.yaml`. On peut utiliser le paramètre `device_class` du selector à `duration` puisque seule la première classe à cette `device_class`. On a alors une configuration `target` qui ressemble à ça :
 >
-```yaml
-  target:
-    entity:
-      integration: tuto_hacs
-      device_class: duration
-  ```
+>```yaml
+>  target:
+>    entity:
+>      integration: tuto_hacs
+>      device_class: duration
+>```
 > Après arrêt / relance, tu ne peux plus sélectionner que la première entité dans l'interface de lancement du service.
 
-# Intégrer notre entités dans l'écosystème Home Assistant
+# Intégrer notre entité dans l'écosystème Home Assistant
 Les services sont très utiles pour intégrer notre intégration dans l'écosystème Home Assistant. Grace à lui on va pouvoir faire une automatisation qui raz le compteur sur un évènement particulier ou intégrer le raz dans un script.
 
 Pour cela il faut ajouter le yaml suivant (donné par "Outils de développement / Services / Passez en mode YAML") :
@@ -573,6 +604,7 @@ target:
 ```
 
 On aussi utiliser notre entité comme trigger des automatisations. Un exemple complet :
+
 ```yaml
 alias: Raz le compteur après une minute
 description: Remet à zéro le compteur lorsqu'il dépasse 60 (donc toutes les minutes)
@@ -602,10 +634,12 @@ Il est impossible d'être exhaustif tellement l'écosystème Home Assistant est 
  - https://developers.home-assistant.io/docs/creating_integration_manifest
  - https://developers.home-assistant.io/docs/configuration_yaml_index
  - https://developers.home-assistant.io/docs/dev_101_services
- - https://developers.home-assistant.io/docs/dev_101_config (non abordé mais important pour récupérer la configuration de Home Assistant)
+ - https://developers.home-assistant.io/docs/dev_101_config
 
-Dans le prochain [tuto](/tuto4.md), on va apprendre à configurer notre intégration à travers l'interface de Home Assistant et non plus à travers le fichier `configuration.yaml`.
+> ![Tip](/images/tips.png?raw=true)
+> Dans le prochain [tuto](/tuto4.md), on va apprendre à configurer notre intégration à travers l'interface de Home Assistant et non plus à travers le fichier `configuration.yaml`.
 
+---
 # Listes des fichiers références de ce tuto
 Ne sont présents que les fichiers modifiés par rapport au tuto précédent.
 
@@ -731,17 +765,6 @@ class TutoHacsElapsedSecondEntity(SensorEntity):
     def native_unit_of_measurement(self) -> str | None:
         return UnitOfTime.SECONDS
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Donne le lien avec le device. Non utilisé jusqu'au tuto 4"""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._attr_name,
-            manufacturer=DEVICE_MANUFACTURER,
-            model=DOMAIN,
-        )
-
     @callback
     async def async_added_to_hass(self):
         """Ce callback est appelé lorsque l'entité est ajoutée à HA"""
@@ -823,17 +846,6 @@ class TutoHacsListenEntity(SensorEntity):
     def device_class(self) -> SensorDeviceClass | None:
         """Cette entité"""
         return SensorDeviceClass.TIMESTAMP
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Donne le lien avec le device. Non utilisé jusqu'au tuto 4"""
-        return DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._attr_name,
-            manufacturer=DEVICE_MANUFACTURER,
-            model=DOMAIN,
-        )
 
     @callback
     async def async_added_to_hass(self):

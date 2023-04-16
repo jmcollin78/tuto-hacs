@@ -505,7 +505,7 @@ Dans ce tuto, tu as appris à :
 2. créer une entité dans cette intégration en lui donnant quelques caractéristiques de base (unité, icone, valeur, classe),
 3. debugger le code avec le debugger intégré de VSC.
 
-
+---
 # Fichiers sources du tuto
 
 L'ensemble du code résultat est remis ici :
