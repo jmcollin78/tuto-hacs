@@ -22,6 +22,11 @@ Avoir déroulé avec succès les trois premiers articles [tuto1](/tuto1.md), [tu
     - [Les Selectors Home Assistant](#les-selectors-home-assistant)
 - [Ajouter une deuxième étape](#ajouter-une-deuxième-étape)
 - [Créer une entité à partir d'une configuration](#créer-une-entité-à-partir-dune-configuration)
+  - [Mémoriser les éléments saisis](#mémoriser-les-éléments-saisis)
+  - [Créer une entrée de configuration (ConfigEntry)](#créer-une-entrée-de-configuration-configentry)
+  - [Créer une entité à partir d'une entrée de configuration](#créer-une-entité-à-partir-dune-entrée-de-configuration)
+  - [Relier les entités à un appareil (device)](#relier-les-entités-à-un-appareil-device)
+- [Modifier une configuration](#modifier-une-configuration)
 
 
 # Les points abordés
@@ -127,7 +132,7 @@ On va donc ajouter une méthode nommée `async_step_user` puisque notre intégra
         1. une première fois sans user_input -> on affiche le formulaire de configuration
         2. une deuxième fois avec les données saisies par l'utilisateur dans user_input -> on sauvegarde les données saisies
         """
-        user_form = vol.Schema({vol.Required("password"): str})
+        user_form = vol.Schema({vol.Required("name"): str})
 
         if user_input is None:
             _LOGGER.debug(
@@ -146,20 +151,20 @@ Comme indiqué dans le commentaire, cette méthode va être appelée 2 fois :
 1. une première fois sans user_input. Home Assistant s'attend à ce qu'on lui donne alors, le formulaire a afficher à l'utilisateur,
 2. une deuxième fois, cette fois avec des données dans user_input. user_input contient alors un dictionnaire avec les valeurs du formulaire saisies par l'utilisateur. On va voir ce qu'on fait de ses valeurs ensuite. Pour l'instant, on va juste les logger.
 
-Note : le code qui initialise le formulaire `user_form = vol.Schema({vol.Required("password"): str})`sera expliqué ci-dessous TODO .
+Note : le code qui initialise le formulaire `user_form = vol.Schema({vol.Required("name"): str})`sera expliqué ci-dessous TODO .
 
 Après relance de Home Assistant, si on tente de créer une intégration de type TutoHACS, on obtient cette fois cette page de configuration :
 
 ![ConfigFlow vide](/images/config-flow-1.png?raw=true)
 
-On est bien rentré dans le config flow et Home Assistant nous affiche le formulaire qui contient un champ "password".
+On est bien rentré dans le config flow et Home Assistant nous affiche le formulaire qui contient un champ "name".
 
-Saisis un mot de passe dans le champ et appuis sur "Valider". Tu dois voir les 2 logs suivants :
+Saisis un nom dans le champ et appuis sur "Valider". Tu dois voir les 2 logs suivants :
 
 ```log
 2023-04-22 10:31:15.284 DEBUG (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step user (1). 1er appel : pas de user_input -> on affiche le form user_form
 ...
-2023-04-22 10:31:19.752 DEBUG (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step user (2). On a reçu les valeurs: {'password': 'xxxxxx'}
+2023-04-22 10:31:19.752 DEBUG (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step user (2). On a reçu les valeurs: {'name': 'xxxxxx'}
 ```
 Ca fonctionne bien, notre methode `async_step_user` a bien été appelée 2 fois, une fois sans valeur et une fois avec les valeurs saisies dans le formulaire.
 
@@ -180,10 +185,10 @@ On va ajouter des libellés à ce formulaire en ajoutant le fichier `strings.jso
                 "title": "Vos infos de connexion",
                 "description": "Donnez vos infos de connexion",
                 "data": {
-                    "password": "Mot de passe"
+                    "name": "Nom"
                 },
                 "data_description": {
-                    "password": "Le mot de passe de l'intégration"
+                    "name": "Nom de l'intégration"
                 }
             }
         }
@@ -197,8 +202,8 @@ Tu donnes dans ce fichier les différents libellés qui accompagnent les formula
 - `flow_title` est le titre du flot de configuration,
 - le bloc `step` contient les libellés des étapes de la configuration,
 - le bloc `user` contient les libellés de l'étape `user`. Il y a la possibilité de mettre un titre et une description
-- le bloc `data` contient les libellés des datas du formulaire `user`. 2 libellés sont possibles : le libellé de nos champs (ici `password`)
-- le bloc `data_description` contient une description optionnelle pour chaque champ du formulaire. Dans notre exemple, il n'y a pas `password`
+- le bloc `data` contient les libellés des datas du formulaire `user`. 2 libellés sont possibles : le libellé de nos champs (ici `name`)
+- le bloc `data_description` contient une description optionnelle pour chaque champ du formulaire. Dans notre exemple, il n'y a pas `name`
 
 Ensuite on va créer une copie de ce fichier dans un sous-répertoire de notre intégration nommé `translations`. Ce répertoire doit contenir, les traductions du fichier `strings.json` dans toutes les langues supportées par notre intégration. La langue par défaut affichées à l'utilisateur sera sa langue configurée dans Home Assistant.
 
@@ -225,7 +230,7 @@ Vides le cache, recharges la page, crées l'intégration TutoHACS et cette fois 
 Dans le code de la fonction `async_step_user` ci-dessus, on a une ligne qui n'a pas été expliquée. Elle initialise le formulaire affiché dans l'étape `user` : 
 
 ```python
-user_form = vol.Schema({vol.Required("password"): str})
+user_form = vol.Schema({vol.Required("name"): str})
 ```
 Ce petit bout de code qui n'a l'air de rien mériterait à lui tout seul un tuto complet tellement il est puissant mais complexe et mal documenté. Je vais vous donner quelques clés pour comprendre comment il marche.
 
@@ -458,8 +463,11 @@ On a définit un parcours de configuration (le fameux `configFlow`) et maintenan
 
 Pour cela, il faut :
 1. mémoriser les éléments saisis à chaque étape,
-2. créer l'entité avec l'ensemble des éléments saisis.
+2. créer une entrée de configuration,
+3. créer les entités avec l'ensemble des éléments saisis,
+4. relier les entités à un appareil (device)
 
+## Mémoriser les éléments saisis
 Pour mémoriser les éléments saisis, il faut ajouter un réceptacle des saisies de l'utilisateur :
 
 ```python
@@ -498,29 +506,203 @@ et la mémorisation dans le réceptacle des user_infos à chacune de nos étapes
 Si on relance en l'état et qu'on ajoute une intégration Tuto HACS, on obtient le log suivant après avoir validé la dernière étape :
 ```log
 2023-04-22 16:43:03.973 DEBUG (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step2 (2). On a reçu les valeurs: {'sensor_id': 'sensor.sun_next_setting'}
-2023-04-22 16:43:03.973 INFO (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step2 (2). L'ensemble de la configuration est: {'password': 'xxxxxxx', 'sensor_id': 'sensor.sun_next_setting'}
+2023-04-22 16:43:03.973 INFO (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step2 (2). L'ensemble de la configuration est: {'name': 'le nom', 'sensor_id': 'sensor.sun_next_setting'}
 ```
 
 Notre objet `_user_inputs` contient bien les 2 champs des 2 formulaires de configuration.
 
+## Créer une entrée de configuration (ConfigEntry)
 
+L'entrée de configuration ou ConfigEntry, est ce qui permet de rendre les configurations des intégrations persistantes dans le temps. Après une relance de Home Assistant, toutes les entités sont créées à partir des configEntry sauvegardées sur le disque. C'est ce qui remplace le `configuration.yaml`.
+Tu peux retrouver toutes les configEntry sur ton disque dur, dans le fichier `config/.storage/core.config_entries`.
 
+Donc à la fin du configFlow, après avoir collecté tous les éléments de configuration, on va demander à Home Assistant de créer ou de mettre à jour un configEntry. Cela se fait très simplement avec le code suivant :
 
+```python
+self.async_create_entry(title="titre de l'entrée", data=self._user_inputs)
+```
 
+On va ajouter une constante CONF_NAME qui définit le nom de l'élément de config `name` au lieu de l'avoir en dur et on va utiliser l'élément de configuration `name` comme `title` pour ce configEntry. La deuxième méthode devient donc :
 
+```python
+    async def async_step_2(self, user_input: dict | None = None) -> FlowResult:
+        """Gestion de l'étape 2. Mêmes principes que l'étape user"""
+        step2_form = vol.Schema(
+            {
+                # On attend un entity id du domaine sensor
+                vol.Optional("sensor_id"): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain=SENSOR_DOMAIN),
+                )
+            }
+        )
 
+        if user_input is None:
+            _LOGGER.debug(
+                "config_flow step2 (1). 1er appel : pas de user_input -> "
+                "on affiche le form step2_form"
+            )
+            return self.async_show_form(step_id="2", data_schema=step2_form)
 
+        # 2ème appel : il y a des user_input -> on stocke le résultat
+        _LOGGER.debug("config_flow step2 (2). On a reçu les valeurs: %s", user_input)
 
+        # On mémorise les user_input
+        self._user_inputs.update(user_input)
+        _LOGGER.info(
+            "config_flow step2 (2). L'ensemble de la configuration est: %s",
+            self._user_inputs,
+        )
 
+        return self.async_create_entry(
+            title=self._user_inputs[CONF_NAME], data=self._user_inputs
+        )
+```
 
+On relance Home Assistant, on créé une intégration de type Tuto HACS et on doit avoir le résultat suivant :
+![Config flow réussi](/images/config-flow-5.png?raw=true)
 
+On constate aussi qu'une intégration a été créée :
+![Config flow échec](/images/config-flow-6.png?raw=true)
+mais elle est en échec.
 
----
-J'ai mis longtemps à comprendre qu'il faut savoir qu'un appareil n'a pas de code, ni de déclaration. Il est simplement créé lorsqu'on déclare une entité et qu'on l'a relie à un appareil.
+Allons voir les logs et on constate ceci :
 
+```log
+2023-04-22 20:59:40.958 DEBUG (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step2 (2). On a reçu les valeurs: {'sensor_id': 'sensor.sun_next_setting'}
+2023-04-22 20:59:40.958 INFO (MainThread) [custom_components.tuto_hacs.config_flow] config_flow step2 (2). L'ensemble de la configuration est: {'name': 'La première', 'sensor_id': 'sensor.sun_next_setting'}
+2023-04-22 20:59:40.961 ERROR (MainThread) [homeassistant.config_entries] Error setting up entry La première for tuto_hacs
+Traceback (most recent call last):
+  File "/home/vscode/.local/lib/python3.11/site-packages/homeassistant/config_entries.py", line 383, in async_setup
+    result = await component.async_setup_entry(hass, self)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'custom_components.tuto_hacs' has no attribute 'async_setup_entry'
 
+```
 
-Pour terminer ce tuto, on va relier cette entité à un appareil (device). Pour cela, c'est très simple, il suffit de déclarer dans la classe de l'entité à quel device elle appartient.
+La configuration s'est bien passée mais il manque à notre module `custom_components.tuto_hacs` une fonction `async_setup_entry`. Cette fonction va servir à transformer le configEntry en entité. On va voir comment faire ça dans le chapitre suivant.
+
+Si on ouvre le fichier `config/.storage/core.config_entries` et qu'on recherche notre configuration, on doit la trouver et elle doit ressembler à ça :
+```yaml
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "core.config_entries",
+  "data": {
+    "entries": [
+        ...
+      {
+        "entry_id": "e88362b08cbf7774cb2ce61bbc952de3",
+        "version": 1,
+        "domain": "tuto_hacs",
+        "title": "La première",
+        "data": {
+          "name": "La première",
+          "sensor_id": "sensor.sun_next_setting"
+        },
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "unique_id": null,
+        "disabled_by": null
+      }
+    ]
+  }
+}
+```
+
+Ce fichier contient bien notre configEntry avec nos paramètres, notamment le `title` qui prend la valeur de `data.name`.
+
+## Créer une entité à partir d'une entrée de configuration
+Au chargement ou lors d'une création d'une nouvelle configEntry, il faut indiquer à Home Assistant, comment instancier les entités et les appareils à partir de cette configEntry. Ca se fait simplement en créant une fonction `async_setup_entry` dans le fichier `__init__.py` :
+
+```python
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Creation des entités à partir d'une configEntry"""
+
+    _LOGGER.debug(
+        "Appel de async_setup_entry entry: entry_id='%s', data='%s'",
+        entry.entry_id,
+        entry.data,
+    )
+
+    hass.data.setdefault(DOMAIN, {})
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    return True
+```
+
+Ce code positionne le domaine par défaut comme étant notre domain, puis appel `hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)` qui comme son nom l'indique propage le configEntry à toutes les plateformes déclarées dans notre intégration.
+
+Rappelles toi que PLATFORMS contient la liste des plateformes des entités créées par notre intégration (si une intégration doit créer un `sensor` et un `switch`, `PLAFORMS` contiendra `['sensor', 'switch']`). Pour le tuto, `PLATFORM`est initialisé comme suit dans le `const.py` : `PLATFORMS: list[Platform] = [Platform.SENSOR]`.
+
+Donc, dans notre cas, l'effet de cette instruction est d'appeler la fonction `async_setup_entry` de notre `sensor.py`. Comme elle n'existe pas, il faut la créer aussi de la façon suivante :
+
+```python
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+):
+    """Configuration des entités sensor à partir de la configuration
+    ConfigEntry passée en argument"""
+
+    _LOGGER.debug("Calling async_setup_entry entry=%s", entry)
+
+    entity1 = TutoHacsElapsedSecondEntity(hass, entry.data)
+    entity2 = TutoHacsListenEntity(hass, entry.data, entity1)
+    async_add_entities([entity1, entity2], True)
+
+    # Add services
+    platform = async_get_current_platform()
+    platform.async_register_entity_service(
+        SERVICE_RAZ_COMPTEUR,
+        {vol.Optional("valeur_depart"): cv.positive_int},
+        "service_raz_compteur",
+    )
+```
+On constate que cette méthode est très proche de la méthode `async_setup_platform` qui initialise les entités à partir de la configuration de notre plateforme trouvée dans le fichier `configuration.yaml`. C'est bien normal puisque les deux font la même chose mais pas à partir de la même source de configuration.
+
+Comme, on n'a pas mis d'élément de configuration donnant le `deviceId`, il va falloir qu'on modifie la façon dont ce deviceId est initalisé. Cf. ci-dessous pour le raccordement des entités à un device.
+
+```python
+
+class TutoHacsElapsedSecondEntity(SensorEntity):
+    ...
+    def __init__(
+        ...
+        self._device_id = self._attr_name = entry_infos[CONF_NAME]
+    ...
+
+class TutoHacsListenEntity(SensorEntity):
+    ...
+    def __init__(
+        ...
+        # On lui donne un nom et un unique_id différent
+        self._device_id = entry_infos.get(CONF_NAME)
+```
+
+On peut relancer Home Assistant (après corriger les éventuelles erreurs...) et on obtient 2 entités supplémentaires ([ici](http://localhost:9123/config/entities)) :
+![Config flow échec](/images/entite-config-flow.png?raw=true)
+
+On constate que les entités précédemment créées par le fichier `configuration.yaml` sont aussi présentes. Il est possible en effet de configurer les entités par les 2 moyens en même temps. Ca ne sert à priori à rien donc on va faire un peu de ménage et supprimer la configuration du `configuration.yaml` :
+
+On supprime tout le bloc :
+```yaml
+sensor:
+  - platform: tuto_hacs
+  ...
+```
+
+On peut aussi supprimer les fonctions `async_setup_platform` de `__init__.py` et `sensor.py` puisqu'elles ne servent que pour les configurations du `configuration.yaml`.
+
+Après arrêt/relance de Home Assistant, on a plus que nos nouvelles entités qui sont actives.
+
+## Relier les entités à un appareil (device)
+Un appareil peut être vu comme un regroupement d'entités chacune exposant une caractéristique d'un même appareil.
+
+J'ai mis longtemps à comprendre qu'il faut savoir qu'un appareil n'a pas de code, ni de déclaration. Il est simplement créé automatiquement lorsqu'on déclare une entité et qu'on l'a relie à un appareil.
+
+Pour terminer cette partie, on va relier nos 2 entités à un même appareil (device). Pour cela, c'est très simple, il suffit de déclarer dans la classe de chacune des entités à quel device elle appartient.
 
 Ca se fait en ajoutant le code suivant dans notre classe d'entité :
 
@@ -535,16 +717,41 @@ class TutoHacsElapsedSecondEntity(SensorEntity):
         """Return the device info."""
         return DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
-            identifiers={(DOMAIN, self._config_id)},
-            name=self._device_name,
+            identifiers={(DOMAIN, self._device_id)},
+            name=self._device_id,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DOMAIN,
+        )
+
+class TutoHacsListenEntity(SensorEntity):
+    ...
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return DeviceInfo(
+            entry_type=DeviceEntryType.SERVICE,
+            identifiers={(DOMAIN, self._device_id)},
+            name=self._device_id,
             manufacturer=DEVICE_MANUFACTURER,
             model=DOMAIN,
         )
 ```
+Si on avait d'autres entités d'autres domaines, on ferait la même chose pour les relier aussi.
+
+Le manufacturer est une constante définie dans le `const.py` lors du tuto3.
+
+On redémarre le tout et on constate dans la liste des appareils ([ici](http://localhost:9123/config/devices/dashboard)), un nouvel appareil nommé "La première" (le `name` donné à l'intégration), qui contient 2 entités :
+![Appareil1](/images/appareil-1.png?raw=true)
+
+Cliques sur l'appareil pour voir ses entités :
+![Appareil2](/images/appareil-2.png?raw=true)
+
+> ![Tip](/images/tips.png?raw=true)
+> Il est possible de créer autant d'intégration que l'on veut. Il suffit pour cela de cliquer sur "Ajouter une intégration" et de donner les éléments de configuration.
 
 
+# Modifier une configuration
 
-On redémarre le tout et on constate dans la liste des appareils, un nouvel appareil 
+Il ne nous reste plus qu'à pouvoir modifier la configuration d'une intégration et on aura fait le tour du configFlow. En imaginant qu'on veuille modifier une option sur une de nos intégrations, il serait dommage d'être obligé de la détruire et de la récréer.
 
-
-
+Pour faire ça, on va ajouter un menu "Configurer" dans notre intégration qui permettra de dérouler un parcours de configuration.
